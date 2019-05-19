@@ -32,6 +32,27 @@ namespace NoteIt
                 ModConfig.Instance.Save();
             });
 
+            selectedValue = ModConfig.Instance.SizeX;
+            group.AddSlider("Panel Width", 160f, 1920f, 160f, selectedValue, sel =>
+            {
+                ModConfig.Instance.SizeX = (int)sel;
+                ModConfig.Instance.Save();
+            });
+
+            selectedValue = ModConfig.Instance.SizeY;
+            group.AddSlider("Panel Height", 160f, 1920f, 160f, selectedValue, sel =>
+            {
+                ModConfig.Instance.SizeY = (int)sel;
+                ModConfig.Instance.Save();
+            });
+
+            selectedValue = ModConfig.Instance.Tabs;
+            group.AddSlider("Tabs", 1f, 24f, 1f, selectedValue, sel =>
+            {
+                ModConfig.Instance.Tabs = (int)sel;
+                ModConfig.Instance.Save();
+            });
+
             selectedValue = ModConfig.Instance.Opacity;
             group.AddSlider("Opacity", 0.0f, 1f, 0.05f, selectedValue, sel =>
             {

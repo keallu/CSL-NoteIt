@@ -9,12 +9,15 @@ namespace NoteIt
     {
         private bool _initialized;
         private float _timer;
+        private bool _avoidSaving;
 
         private UILabel _title;
         private UIButton _close;
         private UIDragHandle _dragHandle;
+
         private UITabstrip _tabstrip;
         private UITabContainer _tabContainer;
+        private UIButton _templateButton;
 
         public override void Awake()
         {
@@ -44,12 +47,7 @@ namespace NoteIt
 
                 if (ModConfig.Instance.Notes == null)
                 {
-                    ModConfig.Instance.Notes = new List<string>
-                    {
-                        "Type your note #1 here.",
-                        "Type your note #2 here.",
-                        "Type your note #3 here."
-                    };
+                    ModConfig.Instance.Notes = new List<string> { };
                 }
 
                 CreateUI();
@@ -88,7 +86,10 @@ namespace NoteIt
                         {
                             _timer -= ModConfig.Instance.SaveInterval;
 
-                            SaveNotes();
+                            if (!_avoidSaving)
+                            {
+                                SaveNotes();
+                            }
                         }
                     }
                 }
@@ -128,6 +129,10 @@ namespace NoteIt
             {
                 Destroy(_tabContainer);
             }
+            if (_templateButton != null)
+            {
+                Destroy(_templateButton);
+            }
         }
 
         private void CreateUI()
@@ -138,9 +143,6 @@ namespace NoteIt
                 backgroundSprite = "MenuPanel2";
                 clipChildren = true;
                 isVisible = ModConfig.Instance.ShowAfterLoad ? true : false;
-                width = ModConfig.Instance.SizeX;
-                height = ModConfig.Instance.SizeY;
-                relativePosition = new Vector3(ModConfig.Instance.PositionX, ModConfig.Instance.PositionY);
                 eventMouseEnter += (component, eventParam) =>
                 {
                     opacity = ModConfig.Instance.OpacityWhenHover;
@@ -159,31 +161,6 @@ namespace NoteIt
                     ModConfig.Instance.PositionY = absolutePosition.y;
                     ModConfig.Instance.Save();
                 };
-
-                _tabstrip = UIUtils.CreateTabStrip(this);
-                _tabContainer = UIUtils.CreateTabContainer(this);
-                _tabstrip.tabPages = _tabContainer;
-
-                UIButton template = UIUtils.CreateTabButton(this);
-                UIPanel panel = null;
-                UITextField textField = null;
-
-                int index = 0;
-
-                foreach (string text in ModConfig.Instance.Notes)
-                {
-                    _tabstrip.AddTab("Note #" + (index + 1), template, true);
-                    _tabstrip.selectedIndex = index;
-
-                    panel = _tabstrip.tabContainer.components[index] as UIPanel;
-                    panel.width = panel.parent.width;
-                    panel.height = panel.parent.height;
-
-                    textField = UIUtils.CreateMultilineTextBox(panel);
-                    textField.text = text;
-
-                    index++;
-                }
             }
             catch (Exception e)
             {
@@ -195,16 +172,104 @@ namespace NoteIt
         {
             try
             {
+                if (!_avoidSaving)
+                {
+                    SaveNotes();
+                }
+
+                _avoidSaving = true;
+
+                if (ModConfig.Instance.Tabs > ModConfig.Instance.Notes.Count)
+                {
+                    int notesMissing = ModConfig.Instance.Tabs - ModConfig.Instance.Notes.Count;
+
+                    for (int i = 0; i < notesMissing; i++)
+                    {
+                        ModConfig.Instance.Notes.Add("Type your note #" + (ModConfig.Instance.Notes.Count + 1) + " here.");
+                    }
+                }
+
                 opacity = ModConfig.Instance.Opacity;
+                width = ModConfig.Instance.SizeX;
+                height = ModConfig.Instance.SizeY;
+                absolutePosition = new Vector3(ModConfig.Instance.PositionX, ModConfig.Instance.PositionY);
+
+                _title.relativePosition = new Vector3(ModConfig.Instance.SizeX / 2f - _title.width / 2f, 11f);
+                _close.relativePosition = new Vector3(ModConfig.Instance.SizeX - 37f, 2f);
+                _dragHandle.width = ModConfig.Instance.SizeX - 40f;
+                _dragHandle.height = 40f;
+                _dragHandle.relativePosition = Vector3.zero;
 
                 UITextField textField = null;
 
+                if (_tabstrip == null || _tabstrip.tabs.Count != ModConfig.Instance.Tabs)
+                {
+                    if (_tabstrip != null)
+                    {
+                        Destroy(_tabstrip);
+                    }
+                    if (_tabContainer != null)
+                    {
+                        Destroy(_tabContainer);
+                    }
+                    if (_templateButton != null)
+                    {
+                        Destroy(_templateButton);
+                    }
+
+                    _tabstrip = UIUtils.CreateTabStrip(this);
+                    _tabContainer = UIUtils.CreateTabContainer(this);
+                    _templateButton = UIUtils.CreateTabButton(this);
+
+                    _tabstrip.tabPages = _tabContainer;
+                    _tabstrip.width = ModConfig.Instance.SizeX - 40f;
+                    _tabstrip.relativePosition = new Vector3(20f, 50f);
+                    _tabContainer.width = ModConfig.Instance.SizeX - 40f;
+                    _tabContainer.height = ModConfig.Instance.SizeY - 120f;
+                    _tabContainer.relativePosition = new Vector3(20f, 100f);
+
+                    UIPanel panel = null;
+
+                    for (int i = 0; i < ModConfig.Instance.Tabs; i++)
+                    {
+                        _tabstrip.AddTab("#" + (i + 1), _templateButton, true);
+                        _tabstrip.selectedIndex = i;
+
+                        panel = _tabstrip.tabContainer.components[i] as UIPanel;
+
+                        if (panel != null)
+                        {
+                            textField = UIUtils.CreateMultilineTextBox(panel);
+                        }
+                    }
+                }
+
+                int index = 0;
+
                 foreach (UIPanel panel in _tabstrip.tabContainer.components)
                 {
-                    textField = panel.Find("TextField").GetComponent<UITextField>();
+                    if (panel != null)
+                    {
+                        panel.width = ModConfig.Instance.SizeX - 40f;
+                        panel.height = ModConfig.Instance.SizeY - 120f;
+                        panel.relativePosition = Vector3.zero;
 
-                    textField.textScale = ModConfig.Instance.TextScale;
+                        textField = panel.Find("TextField").GetComponent<UITextField>();
+
+                        if (textField != null)
+                        {
+                            textField.width = ModConfig.Instance.SizeX - 40f;
+                            textField.height = ModConfig.Instance.SizeY - 120f;
+                            textField.relativePosition = Vector3.zero;
+                            textField.textScale = ModConfig.Instance.TextScale;
+                            textField.text = ModConfig.Instance.Notes[index];
+                        }
+                    }
+
+                    index++;
                 }
+
+                _avoidSaving = false;
             }
             catch (Exception e)
             {
@@ -238,20 +303,32 @@ namespace NoteIt
         {
             try
             {
-                UITextField textField = null;
+                _avoidSaving = true;
 
-                int index = 0;
-
-                foreach (UIPanel panel in _tabstrip.tabContainer.components)
+                if (_initialized)
                 {
-                    textField = panel.Find("TextField").GetComponent<UITextField>();
+                    UITextField textField = null;
+                    int index = 0;
 
-                    ModConfig.Instance.Notes[index] = textField.text;
+                    foreach (UIPanel panel in _tabstrip.tabContainer.components)
+                    {
+                        if (panel != null)
+                        {
+                            textField = panel.Find("TextField").GetComponent<UITextField>();
 
-                    index++;
+                            if (textField != null)
+                            {
+                                ModConfig.Instance.Notes[index] = textField.text;
+                            }
+                        }
+
+                        index++;
+                    }
+
+                    ModConfig.Instance.Save();
                 }
 
-                ModConfig.Instance.Save();
+                _avoidSaving = false;
             }
             catch (Exception e)
             {

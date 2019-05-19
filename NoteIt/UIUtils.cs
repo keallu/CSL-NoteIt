@@ -11,7 +11,6 @@ namespace NoteIt
             label.name = "Title";
             label.text = title;
             label.textAlignment = UIHorizontalAlignment.Center;
-            label.relativePosition = new Vector3(parent.width / 2f - label.width / 2f, 11f);
 
             return label;
         }
@@ -20,7 +19,6 @@ namespace NoteIt
         {
             UIButton button = parent.AddUIComponent<UIButton>();
             button.name = "CloseButton";
-            button.relativePosition = new Vector3(parent.width - 37f, 2f);
 
             button.normalBgSprite = "buttonclose";
             button.hoveredBgSprite = "buttonclosehover";
@@ -38,9 +36,6 @@ namespace NoteIt
         {
             UIDragHandle dragHandle = parent.AddUIComponent<UIDragHandle>();
             dragHandle.name = "DragHandle";
-            dragHandle.width = parent.width - 40f;
-            dragHandle.height = 40f;
-            dragHandle.relativePosition = Vector3.zero;
             dragHandle.target = parent;
 
             return dragHandle;
@@ -51,9 +46,6 @@ namespace NoteIt
             UITabstrip tabstrip = parent.AddUIComponent<UITabstrip>();
             tabstrip.name = "TabStrip";
 
-            tabstrip.width = parent.width - 40f;
-            tabstrip.relativePosition = new Vector3(20f, 50f);
-
             return tabstrip;
         }
 
@@ -61,10 +53,6 @@ namespace NoteIt
         {
             UITabContainer tabContainer = parent.AddUIComponent<UITabContainer>();
             tabContainer.name = "TabContainer";
-
-            tabContainer.width = parent.width - 40f;
-            tabContainer.height = parent.height - 120f;
-            tabContainer.relativePosition = new Vector3(20f, 100f);
 
             return tabContainer;
         }
@@ -75,7 +63,7 @@ namespace NoteIt
             button.name = "TabButton";
 
             button.height = 26f;
-            button.width = 146f;
+            button.width = 52f;
 
             button.textHorizontalAlignment = UIHorizontalAlignment.Center;
             button.textVerticalAlignment = UIVerticalAlignment.Middle;
@@ -99,10 +87,6 @@ namespace NoteIt
         {
             UITextField textField = parent.AddUIComponent<UITextField>();
             textField.name = "TextField";
-
-            textField.width = parent.width;
-            textField.height = parent.height;
-            textField.relativePosition = Vector3.zero;
 
             textField.multiline = true;
             textField.selectOnFocus = true;
