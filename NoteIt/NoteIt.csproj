@@ -54,7 +54,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration.cs" />
+    <Compile Include="Location.cs" />
+    <Compile Include="LocationItem.cs" />
+    <Compile Include="LocationPanel.cs" />
     <Compile Include="Loading.cs" />
+    <Compile Include="LocationTool.cs" />
     <Compile Include="ModConfig.cs" />
     <Compile Include="ModInfo.cs" />
     <Compile Include="MainPanel.cs" />

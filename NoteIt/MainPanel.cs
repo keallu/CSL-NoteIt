@@ -11,12 +11,17 @@ namespace NoteIt
         private float _timer;
         private bool _avoidSaving;
 
+        private LocationPanel _locationPanel;
+
         private UILabel _title;
+        private UIButton _location;
         private UIButton _close;
         private UIDragHandle _dragHandle;
 
         private UITabstrip _tabstrip;
         private UITabContainer _tabContainer;
+        private UIButton _tabAddButton;
+        private UIButton _tabDeleteButton;
         private UIButton _templateButton;
 
         public override void Awake()
@@ -49,8 +54,6 @@ namespace NoteIt
                 {
                     ModConfig.Instance.Notes = new List<string> { };
                 }
-
-                CreateUI();
             }
             catch (Exception e)
             {
@@ -61,6 +64,13 @@ namespace NoteIt
         public override void Start()
         {
             base.Start();
+
+            if (_locationPanel == null)
+            {
+                _locationPanel = GameObject.Find("NoteItLocationPanel").GetComponent<LocationPanel>();
+            }
+
+            CreateUI();
         }
 
         public override void Update()
@@ -72,6 +82,7 @@ namespace NoteIt
                 if (!_initialized || ModConfig.Instance.ConfigUpdated)
                 {
                     UpdateUI();
+                    RefreshNotes();
 
                     _initialized = true;
                     ModConfig.Instance.ConfigUpdated = false;
@@ -88,7 +99,7 @@ namespace NoteIt
 
                             if (!_avoidSaving)
                             {
-                                SaveNotes();
+                                Save();
                             }
                         }
                     }
@@ -96,7 +107,7 @@ namespace NoteIt
 
                 if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.N))
                 {
-                    TogglePanel();
+                    TogglePanel(this);
                 }
             }
             catch (Exception e)
@@ -112,6 +123,10 @@ namespace NoteIt
             if (_title != null)
             {
                 Destroy(_title);
+            }
+            if (_location != null)
+            {
+                Destroy(_location);
             }
             if (_close != null)
             {
@@ -152,7 +167,17 @@ namespace NoteIt
                     opacity = ModConfig.Instance.Opacity;
                 };
 
-                _title = UIUtils.CreateMenuPanelTitle(this, "Note It!");
+                _title = UIUtils.CreateMenuPanelTitle(this, "Note It! - Main");
+                _location = UIUtils.CreateMenuPanelLocationButton(this);
+                _location.eventClick += (component, eventParam) =>
+                {
+                    if (!eventParam.used)
+                    {
+                        TogglePanel(_locationPanel);
+
+                        eventParam.Use();
+                    }                    
+                };
                 _close = UIUtils.CreateMenuPanelCloseButton(this);
                 _dragHandle = UIUtils.CreateMenuPanelDragHandle(this);
                 _dragHandle.eventMouseUp += (component, eventParam) =>
@@ -161,6 +186,56 @@ namespace NoteIt
                     ModConfig.Instance.PositionY = absolutePosition.y;
                     ModConfig.Instance.Save();
                 };
+
+                _tabAddButton = UIUtils.CreateSmallButton(this, "TabAddButton", "+");
+                _tabAddButton.height = 26f;
+                _tabAddButton.width = 26f;
+                _tabAddButton.eventClick += (component, eventParam) =>
+                {
+                    if (!eventParam.used)
+                    {
+                        ModConfig.Instance.Notes.Add("Type your note #" + (ModConfig.Instance.Notes.Count + 1) + " here.");
+                        RefreshNotes();
+
+                        eventParam.Use();
+                    }
+                };
+
+                _tabDeleteButton = UIUtils.CreateSmallButton(this, "TabDeleteButton", "-");
+                _tabDeleteButton.height = 26f;
+                _tabDeleteButton.width = 26f;
+                _tabDeleteButton.eventClick += (component, eventParam) =>
+                {
+                    if (!eventParam.used)
+                    {
+                        ModConfig.Instance.Notes.RemoveAt(ModConfig.Instance.Notes.Count - 1);
+                        RefreshNotes();
+
+                        eventParam.Use();
+                    }
+                };
+
+                _tabstrip = UIUtils.CreateTabStrip(this);
+                _tabContainer = UIUtils.CreateTabContainer(this);
+                _templateButton = UIUtils.CreateTabButton(this);
+
+                _tabstrip.tabPages = _tabContainer;
+
+                UIPanel panel = null;
+                UITextField textField = null;
+
+                for (int i = 0; i < ModConfig.Instance.MaxNotes; i++)
+                {
+                    _tabstrip.AddTab("#" + (i + 1), _templateButton, true);
+                    _tabstrip.selectedIndex = i;
+
+                    panel = _tabstrip.tabContainer.components[i] as UIPanel;
+
+                    if (panel != null)
+                    {
+                        textField = UIUtils.CreateMultilineTextField(panel, "TextField", "");
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -174,77 +249,33 @@ namespace NoteIt
             {
                 if (!_avoidSaving)
                 {
-                    SaveNotes();
+                    Save();
                 }
 
                 _avoidSaving = true;
-
-                if (ModConfig.Instance.Tabs > ModConfig.Instance.Notes.Count)
-                {
-                    int notesMissing = ModConfig.Instance.Tabs - ModConfig.Instance.Notes.Count;
-
-                    for (int i = 0; i < notesMissing; i++)
-                    {
-                        ModConfig.Instance.Notes.Add("Type your note #" + (ModConfig.Instance.Notes.Count + 1) + " here.");
-                    }
-                }
 
                 opacity = ModConfig.Instance.Opacity;
                 width = ModConfig.Instance.SizeX;
                 height = ModConfig.Instance.SizeY;
                 absolutePosition = new Vector3(ModConfig.Instance.PositionX, ModConfig.Instance.PositionY);
 
-                _title.relativePosition = new Vector3(ModConfig.Instance.SizeX / 2f - _title.width / 2f, 11f);
-                _close.relativePosition = new Vector3(ModConfig.Instance.SizeX - 37f, 2f);
+                _title.relativePosition = new Vector3(ModConfig.Instance.SizeX / 2f - _title.width / 2f, 15f);
+                _location.relativePosition = new Vector3(ModConfig.Instance.SizeX - 67f, 5f);
+                _close.relativePosition = new Vector3(ModConfig.Instance.SizeX - 37f, 3f);
                 _dragHandle.width = ModConfig.Instance.SizeX - 40f;
                 _dragHandle.height = 40f;
                 _dragHandle.relativePosition = Vector3.zero;
 
+                _tabAddButton.relativePosition = new Vector3(ModConfig.Instance.SizeX - 77f, 50f);
+                _tabDeleteButton.relativePosition = new Vector3(ModConfig.Instance.SizeX - 46f, 50f);                
+
+                _tabstrip.width = ModConfig.Instance.SizeX - 100f;
+                _tabstrip.relativePosition = new Vector3(20f, 50f);
+                _tabContainer.width = ModConfig.Instance.SizeX - 40f;
+                _tabContainer.height = ModConfig.Instance.SizeY - 120f;
+                _tabContainer.relativePosition = new Vector3(20f, 100f);
+
                 UITextField textField = null;
-
-                if (_tabstrip == null || _tabstrip.tabs.Count != ModConfig.Instance.Tabs)
-                {
-                    if (_tabstrip != null)
-                    {
-                        Destroy(_tabstrip);
-                    }
-                    if (_tabContainer != null)
-                    {
-                        Destroy(_tabContainer);
-                    }
-                    if (_templateButton != null)
-                    {
-                        Destroy(_templateButton);
-                    }
-
-                    _tabstrip = UIUtils.CreateTabStrip(this);
-                    _tabContainer = UIUtils.CreateTabContainer(this);
-                    _templateButton = UIUtils.CreateTabButton(this);
-
-                    _tabstrip.tabPages = _tabContainer;
-                    _tabstrip.width = ModConfig.Instance.SizeX - 40f;
-                    _tabstrip.relativePosition = new Vector3(20f, 50f);
-                    _tabContainer.width = ModConfig.Instance.SizeX - 40f;
-                    _tabContainer.height = ModConfig.Instance.SizeY - 120f;
-                    _tabContainer.relativePosition = new Vector3(20f, 100f);
-
-                    UIPanel panel = null;
-
-                    for (int i = 0; i < ModConfig.Instance.Tabs; i++)
-                    {
-                        _tabstrip.AddTab("#" + (i + 1), _templateButton, true);
-                        _tabstrip.selectedIndex = i;
-
-                        panel = _tabstrip.tabContainer.components[i] as UIPanel;
-
-                        if (panel != null)
-                        {
-                            textField = UIUtils.CreateMultilineTextBox(panel);
-                        }
-                    }
-                }
-
-                int index = 0;
 
                 foreach (UIPanel panel in _tabstrip.tabContainer.components)
                 {
@@ -262,12 +293,11 @@ namespace NoteIt
                             textField.height = ModConfig.Instance.SizeY - 120f;
                             textField.relativePosition = Vector3.zero;
                             textField.textScale = ModConfig.Instance.TextScale;
-                            textField.text = ModConfig.Instance.Notes[index];
                         }
                     }
-
-                    index++;
                 }
+
+                _locationPanel.ForceUpdate();
 
                 _avoidSaving = false;
             }
@@ -277,19 +307,57 @@ namespace NoteIt
             }
         }
 
-        private void TogglePanel()
+        private void RefreshNotes()
         {
             try
             {
-                if (this != null)
+                int index = 0;
+                UITextField textField = null;
+
+                foreach (string note in ModConfig.Instance.Notes)
                 {
-                    if (isVisible)
+                    _tabstrip.components[index].Show();
+
+                    textField = _tabstrip.tabContainer.components[index].Find("TextField").GetComponent<UITextField>();
+
+                    if (textField != null)
                     {
-                        Hide();
+                        textField.text = note;
+                    }
+
+                    index++;
+                }
+
+                if (index < ModConfig.Instance.MaxNotes)
+                {
+                    for (int i = index; i < ModConfig.Instance.MaxNotes; i++)
+                    {
+                        _tabstrip.components[i].Hide();
+                    }
+                }
+                _tabAddButton.enabled = ModConfig.Instance.Notes.Count < ModConfig.Instance.MaxNotes ? true : false;
+                _tabDeleteButton.enabled = ModConfig.Instance.Notes.Count > 0 ? true : false;
+
+            }
+            catch (Exception e)
+            {
+                Debug.Log("[Note It!] MainPanel:RefreshNotes -> Exception: " + e.Message);
+            }
+        }
+
+        private void TogglePanel(UIPanel panel)
+        {
+            try
+            {
+                if (panel != null)
+                {
+                    if (panel.isVisible)
+                    {
+                        panel.Hide();
                     }
                     else
                     {
-                        Show();
+                        panel.Show();
                     }
                 }
             }
@@ -299,33 +367,30 @@ namespace NoteIt
             }
         }
 
-        private void SaveNotes()
+        private void Save()
         {
             try
             {
                 _avoidSaving = true;
 
                 if (_initialized)
-                {
-                    UITextField textField = null;
+                {                    
                     int index = 0;
+                    UITextField textField = null;
 
-                    foreach (UIPanel panel in _tabstrip.tabContainer.components)
+                    foreach (string note in ModConfig.Instance.Notes)
                     {
-                        if (panel != null)
-                        {
-                            textField = panel.Find("TextField").GetComponent<UITextField>();
+                        textField = _tabstrip.tabContainer.components[index].Find("TextField").GetComponent<UITextField>();
 
-                            if (textField != null)
-                            {
-                                ModConfig.Instance.Notes[index] = textField.text;
-                            }
+                        if (textField != null)
+                        {
+                            ModConfig.Instance.Notes[index] = textField.text;
                         }
 
                         index++;
                     }
 
-                    ModConfig.Instance.Save();
+                    ModConfig.Instance.SaveWithoutUpdate();
                 }
 
                 _avoidSaving = false;

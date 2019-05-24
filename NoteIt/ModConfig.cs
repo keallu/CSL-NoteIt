@@ -14,10 +14,12 @@ namespace NoteIt
         public float SizeY { get; set; } = 640f;
         public float Opacity { get; set; } = 1.0f;
         public float OpacityWhenHover { get; set; } = 1.0f;
-        public int Tabs { get; set; } = 3;
         public float TextScale { get; set; } = 1.0f;
+        public int MaxNotes { get; set; } = 24;
         public List<string> Notes { get; set; }
-
+        public int MaxLocations { get; set; } = 24;
+        public List<Location> Locations { get; set; }
+        
         private static ModConfig instance;
 
         public static ModConfig Instance
@@ -37,6 +39,11 @@ namespace NoteIt
         {
             Configuration<ModConfig>.Save();
             ConfigUpdated = true;
+        }
+
+        public void SaveWithoutUpdate()
+        {
+            Configuration<ModConfig>.Save();
         }
     }
 }

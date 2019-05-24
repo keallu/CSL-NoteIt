@@ -8,7 +8,8 @@ namespace NoteIt
     public class Loading : LoadingExtensionBase
     {
         private LoadMode _loadMode;
-        private GameObject _gameObject;
+        private GameObject _mainPanelGameObject;
+        private GameObject _locationPanelGameObject;
 
         public override void OnLevelLoaded(LoadMode mode)
         {
@@ -21,12 +22,22 @@ namespace NoteIt
                     return;
                 }
 
-                UIView objectOfType = UnityEngine.Object.FindObjectOfType<UIView>();
-                if (objectOfType != null)
+                ToolController toolController = UnityEngine.Object.FindObjectOfType<ToolController>();
+                if (toolController != null)
                 {
-                    _gameObject = new GameObject("NoteItMainPanel");
-                    _gameObject.transform.parent = objectOfType.transform;
-                    _gameObject.AddComponent<MainPanel>();
+                    LocationTool.Instance = toolController.gameObject.AddComponent<LocationTool>();
+                }
+
+                UIView uiView = UnityEngine.Object.FindObjectOfType<UIView>();
+                if (uiView != null)
+                {
+                    _mainPanelGameObject = new GameObject("NoteItMainPanel");
+                    _mainPanelGameObject.transform.parent = uiView.transform;
+                    _mainPanelGameObject.AddComponent<MainPanel>();
+
+                    _locationPanelGameObject = new GameObject("NoteItLocationPanel");
+                    _locationPanelGameObject.transform.parent = uiView.transform;
+                    _locationPanelGameObject.AddComponent<LocationPanel>();
                 }
             }
             catch (Exception e)
@@ -44,9 +55,19 @@ namespace NoteIt
                     return;
                 }
 
-                if (_gameObject != null)
+                if (_locationPanelGameObject != null)
                 {
-                    UnityEngine.Object.Destroy(_gameObject);
+                    UnityEngine.Object.Destroy(_locationPanelGameObject);
+                }
+
+                if (_mainPanelGameObject != null)
+                {
+                    UnityEngine.Object.Destroy(_mainPanelGameObject);
+                }
+
+                if (LocationTool.Instance != null)
+                {
+                    UnityEngine.Object.Destroy(LocationTool.Instance);
                 }
             }
             catch (Exception e)

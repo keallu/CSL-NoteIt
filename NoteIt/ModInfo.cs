@@ -46,13 +46,6 @@ namespace NoteIt
                 ModConfig.Instance.Save();
             });
 
-            selectedValue = ModConfig.Instance.Tabs;
-            group.AddSlider("Tabs", 1f, 24f, 1f, selectedValue, sel =>
-            {
-                ModConfig.Instance.Tabs = (int)sel;
-                ModConfig.Instance.Save();
-            });
-
             selectedValue = ModConfig.Instance.Opacity;
             group.AddSlider("Opacity", 0.0f, 1f, 0.05f, selectedValue, sel =>
             {
