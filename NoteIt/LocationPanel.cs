@@ -150,6 +150,7 @@ namespace NoteIt
                 name = "NoteItLocationPanel";
                 backgroundSprite = "MenuPanel2";
                 clipChildren = true;
+                isVisible = ModConfig.Instance.ShowAfterLoad ? true : false;
                 eventMouseEnter += (component, eventParam) =>
                 {
                     opacity = ModConfig.Instance.OpacityWhenHover;
